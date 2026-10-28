@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚡ Chat Live — Arena Ultra</title>
+  <link rel="stylesheet" href="livechat.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Left Sidebar: Rooms, Live Agent Roster & Quick Controls -->
+    <aside class="sidebar">
+      <div class="brand-bar">
+        <div class="brand-left">
+          <div class="live-orb"></div>
+          <div>
+            <div class="brand-title">Arena Ultra • Chat Live</div>
+            <div class="brand-sub">Conversa em Tempo Real com seus Agents</div>
+          </div>
+        </div>
+        <button id="btn-open-dashboard" class="icon-btn" title="Abrir Central Completa Arena Ultra">⚙️</button>
+      </div>
+
+      <div class="panel-block">
+        <div class="block-label">SALA ATIVA</div>
+        <select id="room-select" class="select-input">
+          <option value="">Carregando salas...</option>
+        </select>
+        <div class="row-gap" style="margin-top:8px;">
+          <button id="btn-unite-open" class="btn btn-primary" style="flex:1;" title="Unir todas as abas abertas do Arena.ai numa nova Sala ao Vivo">
+            🔗 Unir Abas Abertas
+          </button>
+          <button id="btn-new-batch" class="btn" title="Abrir Lançador Multi-Agent">
+            🚀 + Lote
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick inline Unite Open Tabs form (collapsible) -->
+      <div id="unite-box" class="panel-block unite-drawer" style="display:none;">
+        <div class="block-label">NOVA SALA COM ABAS ABERTAS</div>
+        <input id="unite-task" class="text-input" placeholder="Objetivo da equipe (ex: Criar SaaS completo)" />
+        <select id="unite-profile" class="select-input" style="margin-top:6px;">
+          <option value="specialists">Equipe de Especialistas (Arquiteto + Dev + QA + Líder)</option>
+          <option value="parallel_leader">Divisão Paralela de Escopo + Líder</option>
+          <option value="debate_consensus">Debate & Consenso entre Pares</option>
+        </select>
+        <input id="unite-gh-repo" class="text-input" style="margin-top:6px;" placeholder="🐙 Link GitHub (https://github.com/usuario/repo)" />
+        <div class="row-gap" style="margin-top:5px;">
+          <input id="unite-gh-token" type="password" class="text-input" style="flex:1;" placeholder="🔑 Token PAT p/ PRs diretos sem você no loop" />
+          <a href="https://github.com/settings/tokens/new?scopes=repo,workflow,project&description=Arena+Ultra+Autonomous+PR" target="_blank" rel="noopener" class="btn btn-sm" style="text-decoration:none;border-color:rgba(245,158,11,0.5);color:#fcd34d;" title="Gerar Token PAT já com permissões repo + workflow + project para os Agents abrirem PRs sozinhos">🔑 Token</a>
+        </div>
+        <div class="row-gap" style="margin-top:8px;">
+          <button id="btn-confirm-unite" class="btn btn-primary" style="flex:1;">⚡ Criar & Conectar Agora</button>
+          <button id="btn-cancel-unite" class="btn">Cancelar</button>
+        </div>
+      </div>
+
+      <div id="room-controls-block" class="panel-block" style="display:none;">
+        <div class="row-between">
+          <span class="block-label">CONTROLES DA SALA</span>
+          <span id="harness-status" class="status-pill" title="Resultados declarados pelos agentes; não são atestação remota"></span>
+          <span id="room-status-pill" class="status-pill active">AO VIVO</span>
+        </div>
+        <div class="row-gap" style="margin-top:6px;">
+          <button id="btn-nothink-toggle" class="btn btn-sm nothink-active" style="flex:1;" title="Parar, arquivar (··· → Archive) e recusar modelos com Thinking">
+            🚫 Sem Thinking: ON
+          </button>
+          <button id="btn-sync-now" class="btn btn-sm" title="Forçar sincronização imediata do barramento ao vivo">
+            🔄 Sync
+          </button>
+        </div>
+        <select id="stop-mode-select" class="select-input" style="margin-top:6px;" title="Quando a equipe deve parar">
+          <option value="smart_consensus">Parada: Entrega Final Consolidada</option>
+          <option value="endless_tokens">Parada: Refinar até Esgotar Tokens</option>
+        </select>
+        <div class="row-gap" style="margin-top:6px;">
+          <button id="btn-pause-room" class="btn btn-sm" style="flex:1;">⏸ Pausar Time</button>
+          <button id="btn-resume-room" class="btn btn-sm" style="flex:1;">▶ Retomar Time</button>
+        </div>
+        <div class="row-gap" style="margin-top:6px;">
+          <button id="btn-ext-bridge" class="btn btn-sm" style="flex:1;" title="Espelhar conversa em tempchat.online">
+            🌐 tempchat.online
+          </button>
+          <button id="btn-toggle-artifacts" class="btn btn-sm" style="flex:1;" title="Ver Arquivos Compartilhados e Entrega Final">
+            📦 Entrega & Arquivos
+          </button>
+        </div>
+        <div class="row-gap" style="margin-top:6px;">
+          <button id="btn-toggle-board" class="btn btn-sm btn-primary" style="flex:1;" title="Abrir Quadro Compartilhado de Atribuições & Contratos com Atualização Única">
+            📋 Quadro Único & Contratos
+          </button>
+          <button id="btn-toggle-diff" class="btn btn-sm" style="border-color:rgba(168,85,247,0.5);color:#d8b4fe;" title="Ver Diff Unificado & Matriz de Conflitos entre os Workspaces dos Agents">
+            Δ Diff da Sala
+          </button>
+        </div>
+        <div class="row-gap" style="margin-top:6px;">
+          <button id="btn-team-huddle" class="btn btn-sm" style="flex:1;border-color:rgba(16,185,129,0.55);color:#6ee7b7;" title="Convocar imediatamente todos os Agents da sala para conversarem entre si, dividirem arquivos sem sobreposição e alinharem contratos como um único time unido">
+            🤝 Alinhar &amp; Dividir Papéis do Time
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-block agents-section">
+        <div class="row-between">
+          <span class="block-label">AGENTS NO TIME (<span id="agents-count">0</span>)</span>
+          <span id="refused-counter" class="muted-tiny"></span>
+        </div>
+        <div id="agents-roster" class="agents-list">
+          <div class="empty-hint">Nenhuma sala selecionada.</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Main Live Chat Feed & Composer -->
+    <main class="chat-stage">
+      <!-- Top Header -->
+      <header class="stage-header">
+        <div class="header-left">
+          <h1 id="stage-title">⚡ Chat Live — Sala Multi-Agent</h1>
+          <span id="stage-subtitle" class="stage-sub">Acompanhe os modelos conversando ao vivo e oriente a equipe em tempo real</span>
+        </div>
+        <div class="filter-pills" role="toolbar" aria-label="Filtros e Ações do Chat Live">
+          <button id="btn-live-emergency-stop" class="btn btn-sm btn-danger-kill" aria-label="PARAR TUDO imediatamente" title="Kill Switch Global: para todas as salas e abas Autopilot em < 2s">🛑 PARAR TUDO</button>
+          <button class="filter-chip active" data-filter="all">Tudo (<span id="cnt-all">0</span>)</button>
+          <button class="filter-chip" data-filter="chat">Só Conversas</button>
+          <button class="filter-chip" data-filter="artifacts">Arquivos & Radar Git</button>
+          <button id="btn-header-diff" class="btn btn-sm" style="border-color:rgba(168,85,247,0.5);color:#d8b4fe;" title="Inspecionar Diff Multi-Agent e conflitos de arquivos">Δ Diff</button>
+          <button id="btn-header-board" class="btn btn-sm" title="Abrir Quadro Único de Atribuições & Contratos">📋 Contratos (<span id="cnt-contracts">0</span>)</button>
+          <button id="btn-deadlock-check" class="btn btn-sm" title="Diagnosticar e destravar esperas circulares (Deadlock)">🩺 Deadlock</button>
+          <button id="btn-copy-log" class="btn btn-sm" title="Copiar histórico completo desta sala">📋 Copiar Chat</button>
+        </div>
+      </header>
+
+      <!-- ARENA-11: Needs Human Exception Banner -->
+      <div id="needs-human-bar" class="sla-bar" style="display:none;background:rgba(245,158,11,0.14);border-color:rgba(245,158,11,0.55);" role="alert">
+        <div class="sla-left">
+          <strong style="color:#fcd34d;">⏸ PRECISA DE VOCÊ:</strong>
+          <span id="needs-human-reason" class="muted-tiny" style="color:#fef3c7;">A sala pausou por uma exceção que exige decisão humana.</span>
+        </div>
+        <div class="row-gap">
+          <button id="btn-authorize-resume" class="btn btn-sm btn-primary">⚡ Autorizar +15 Rodadas &amp; Retomar</button>
+        </div>
+      </div>
+
+      <!-- PROD-01: Multi-Agent Unified Diff & File Conflict Matrix Drawer -->
+      <section id="diff-drawer" class="artifacts-drawer" style="display:none;" aria-label="Diff Multi-Agent da Sala">
+        <div class="artifacts-grid">
+          <div class="artifact-card">
+            <div class="row-between">
+              <strong>Δ Matriz de Arquivos &amp; Conflitos Multi-Agent</strong>
+              <button id="btn-refresh-diff" class="btn btn-sm btn-primary">🔄 Calcular Diff Agora</button>
+            </div>
+            <div id="diff-summary-list" class="files-list" style="margin-top:6px;">Clique em "Calcular Diff Agora" para comparar os Workspaces (/home/user) de todos os Agents da sala.</div>
+          </div>
+          <div class="artifact-card">
+            <div class="row-between">
+              <strong>🔍 Hunks Unificados (LCS Diff)</strong>
+              <span id="diff-conflict-badge" class="muted-tiny">0 conflitos</span>
+            </div>
+            <pre id="diff-hunks-box" class="final-box">Selecione ou calcule o Diff ao lado para inspecionar mudanças linha a linha.</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- v3.4.0 Live Integration State Machine, SLA Countdown & Deduplication Bar -->
+      <div id="sla-status-bar" class="sla-bar" style="display:none;">
+        <div class="sla-left">
+          <span id="sla-state-badge" class="sla-badge">🟡 Inicializando</span>
+          <span id="sla-timer-text" class="muted-tiny">Prazo: --</span>
+          <span id="sla-modules-text" class="muted-tiny">• Módulos prontos: 0/0</span>
+          <span id="sla-dedup-text" class="muted-tiny"></span>
+          <span id="sla-vault-badge" class="muted-tiny"></span>
+        </div>
+        <div class="row-gap">
+          <button id="btn-sla-add10" class="btn btn-sm" title="Adicionar +10 minutos ao prazo limite da integração">+10m Prazo</button>
+          <button id="btn-sla-force-ready" class="btn btn-sm btn-primary" title="Sinalizar imediatamente que todos os módulos estão prontos para o Líder Sintetizador consolidar!">🎯 Liberar Síntese Final</button>
+        </div>
+      </div>
+
+      <!-- v3.4.0 Collapsible Shared Single-Update Assignments & Contracts Board -->
+      <section id="board-drawer" class="artifacts-drawer" style="display:none;">
+        <div class="artifacts-grid">
+          <div class="artifact-card">
+            <div class="row-between">
+              <strong>📋 Atribuições Únicas por Agente</strong>
+              <span id="board-rev-badge" class="muted-tiny">rev #1</span>
+            </div>
+            <div id="board-assignments-list" class="files-list" style="margin-top:6px;">Nenhuma atribuição registrada.</div>
+          </div>
+          <div class="artifact-card">
+            <div class="row-between">
+              <strong>📜 Contratos Únicos (Sem Duplicatas) & Radar Git</strong>
+              <span class="muted-tiny">Upsert por chave</span>
+            </div>
+            <div class="row-gap" style="margin-top:6px;">
+              <input id="contract-key-input" class="text-input" style="max-width:135px;" placeholder="Chave (ex: api/auth)" />
+              <input id="contract-spec-input" class="text-input" style="flex:1;" placeholder="Especificação única (ex: POST /login -> {token})" />
+              <select id="contract-status-input" class="select-input" style="max-width:115px;">
+                <option value="congelado">Congelado</option>
+                <option value="validado">Validado</option>
+                <option value="rascunho">Rascunho</option>
+              </select>
+              <button id="btn-save-contract" class="btn btn-sm btn-primary">Salvar Único</button>
+            </div>
+            <div id="board-contracts-list" class="files-list" style="margin-top:8px;">Nenhum contrato registrado ainda.</div>
+            <div id="board-gitrefs-list" class="muted-tiny" style="margin-top:6px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Collapsible Artifacts & Final Deliverable Drawer -->
+      <section id="artifacts-drawer" class="artifacts-drawer" style="display:none;">
+        <div class="artifacts-grid">
+          <div class="artifact-card">
+            <div class="row-between">
+              <strong>📦 Arquivos Temporários & GitHub</strong>
+              <span id="files-count-badge" class="muted-tiny">0 arquivos</span>
+            </div>
+            <div id="shared-files-list" class="files-list">Nenhum arquivo compartilhado ainda.</div>
+          </div>
+          <div class="artifact-card">
+            <div class="row-between">
+              <strong>🏆 Entrega Final Consolidada</strong>
+              <button id="btn-copy-final" class="btn btn-sm">Copiar Entrega</button>
+            </div>
+            <pre id="final-deliverable-box" class="final-box">Aguardando o Líder Sintetizador publicar [ENTREGA_FINAL_PRONTA]...</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Feed (O(1) Incremental DOM Append — Zero Lag!) -->
+      <div id="chat-feed" class="chat-feed">
+        <div id="empty-state" class="empty-stage">
+          <div class="empty-icon">⚡</div>
+          <h2>Chat Live Multi-Agent Pronto</h2>
+          <p>
+            Una suas abas abertas do <strong>Arena.ai</strong> clicando em <strong>"🔗 Unir Abas Abertas"</strong> à esquerda
+            (ou lance um lote Multi-Agent com Modo Colaboração ativo) para assistir seus modelos conversando ao vivo via
+            <code>/tmp/au_chat</code> e interagir com eles em tempo real!
+          </p>
+        </div>
+      </div>
+
+      <button id="btn-jump-bottom" class="jump-bottom-pill" style="display:none;">
+        ⬇ Novas mensagens ao vivo
+      </button>
+
+      <!-- Bottom Live Composer -->
+      <footer class="composer-bar">
+        <div class="quick-prompts-row">
+          <select id="target-agent-select" class="target-select" title="Escolher destinatário da mensagem">
+            <option value="">📢 Para: Todos os Agents do Time</option>
+          </select>
+          <div class="quick-chips">
+            <button class="quick-chip" data-msg="Alinhem agora pelo /tmp/au_chat send os contratos, rotas e tipos antes de avançar na implementação!">🤝 Alinhar contratos</button>
+            <button class="quick-chip" data-msg="Mandem agora no /tmp/au_chat send um status curto do que cada um já concluiu e o que falta!">📊 Pedir status ao vivo</button>
+            <button class="quick-chip" data-msg="Revisem o código e os arquivos compartilhados dos colegas para caçar qualquer bug ou conflito!">🔍 Revisão cruzada</button>
+            <button class="quick-chip" data-msg="Líder Sintetizador: integre todas as frentes da equipe e apresente a solução completa com [ENTREGA_FINAL_PRONTA]!">🏆 Consolidar entrega</button>
+          </div>
+        </div>
+
+        <div class="composer-input-row">
+          <textarea
+            id="live-input"
+            rows="2"
+            placeholder="Digite sua mensagem ao vivo para os Agents... (Enter envia • Shift+Enter quebra linha)"
+          ></textarea>
+          <button id="btn-send-live" class="send-btn">
+            <span>⚡ Enviar Ao Vivo</span>
+          </button>
+        </div>
+
+        <div class="composer-meta-row">
+          <label class="chk-label" title="Publica imediatamente no barramento /tmp/au_chat (para Agents gerando lerem em <1s) e também aciona Agents parados/ociosos!">
+            <input type="checkbox" id="chk-direct-idle" checked />
+            <span>Entregar em tempo real no terminal (<code>/tmp/au_chat</code>) e acionar imediatamente Agents ociosos</span>
+          </label>
+          <span id="send-status" class="muted-tiny">Latência de barramento ~1–2s • Zero travamento de DOM</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="../shared/i18n.js"></script>
+  <script src="../shared/cred-broker.js"></script>
+  <script src="../shared/diff-engine.js"></script>
+  <script src="../shared/arena-adapter.js"></script>
+  <script src="../shared/scheduler.js"></script>
+  <script src="../shared/plugin-runtime.js"></script>
+  <script src="../shared/defaults.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="../shared/integrations.js"></script>
+  <script src="../shared/agent-kit.js"></script>
+  <script src="../shared/harness-engine.js"></script>
+  <script src="../shared/collab-engine.js"></script>
+  <script src="livechat.js"></script>
+</body>
+</html>

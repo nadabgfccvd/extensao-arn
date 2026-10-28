@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arena Ultra v4.0</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="header" role="banner">
+    <div class="brand">
+      <img src="../icons/icon32.png" alt="Arena Ultra" class="logo" />
+      <div>
+        <div class="brand-name">Arena Ultra <span class="muted" style="font-weight:500;">v4.0</span></div>
+        <div class="brand-sub" data-i18n="app.subtitle">Autopilot &amp; Multi-Agent</div>
+      </div>
+    </div>
+    <div class="header-actions" role="toolbar" aria-label="Ações Rápidas">
+      <button id="btn-emergency-stop" class="btn btn-sm btn-danger-kill" aria-label="PARAR TUDO imediatamente em todas as abas e salas" title="Kill Switch Global: para todas as salas e abas Autopilot em < 2s">🛑 PARAR TUDO</button>
+      <button id="btn-open-livechat" class="btn btn-sm" style="border-color:rgba(6,182,212,0.6);color:#67e8f9;" aria-label="Abrir Chat Live" title="Abrir guia dedicada Chat Live (Agents conversando ao vivo)">⚡ Chat Live</button>
+      <button id="btn-open-dashboard" class="btn btn-primary btn-sm" aria-label="Abrir Central em Tela Cheia" title="Abrir Central em Tela Cheia">Central ↗</button>
+    </div>
+  </header>
+
+  <section class="stats-grid" aria-label="Métricas da Sessão">
+    <div class="stat-card">
+      <span class="stat-val" id="st-active-tabs">0</span>
+      <span class="stat-lbl">Agents Ativos</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-val" id="st-total-loops">0</span>
+      <span class="stat-lbl">Loops Enviados</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-val" id="st-batches">0</span>
+      <span class="stat-lbl">Lotes Lançados</span>
+    </div>
+  </section>
+
+  <section id="popup-vault-banner" class="panel" style="display:none;border-color:rgba(16,185,129,0.45);background:rgba(16,185,129,0.07);padding:7px 9px;" aria-live="polite">
+    <div class="row-between">
+      <div style="min-width:0;flex:1;">
+        <strong id="popup-vault-title" style="color:#6ee7b7;font-size:11.5px;">🔐 Cofre GitHub Zero-Token (Sessão)</strong>
+        <div id="popup-vault-sub" class="muted" style="font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+      </div>
+      <div class="mini-actions">
+        <button id="btn-open-integrations" class="chip" aria-label="Abrir Cofre GitHub" title="Abrir Cofre GitHub">🐙 Cofre</button>
+        <button id="btn-popup-revoke-vault" class="chip" style="border-color:rgba(244,63,94,0.5);color:#fda4af;" aria-label="Revogar Cofre GitHub" title="Revogar Cofre GitHub na sessão">🚫 Revogar</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="popup-collab-banner" class="panel" style="display:none;border-color:rgba(6,182,212,0.5);background:rgba(6,182,212,0.08);" aria-live="polite">
+    <div class="row-between">
+      <div>
+        <strong id="popup-collab-title" style="color:#67e8f9;font-size:12px;">🤝 Sala TempChat Ativa</strong>
+        <div id="popup-collab-sub" class="muted" style="font-size:11px;"></div>
+      </div>
+      <button id="btn-open-collab-dash" class="btn btn-sm" style="border-color:rgba(6,182,212,0.5);color:#67e8f9;" aria-label="Abrir Sala no Chat Live">⚡ Chat Live ↗</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Mission Control de Abas Abertas">
+    <div class="panel-head">
+      <span>Mission Control (Abas Abertas)</span>
+      <div class="mini-actions">
+        <button id="btn-new-agent" class="chip" title="Abrir novo chat em arena.ai/agent">+ Agent</button>
+        <button id="btn-pause-all" class="chip" title="Pausar Auto-Continue em todas">⏸ Pausar</button>
+        <button id="btn-resume-all" class="chip" title="Retomar Auto-Continue em todas">▶ Retomar</button>
+        <button id="btn-group-tabs" class="chip" title="Agrupar abas no navegador">Agrupar</button>
+        <button id="btn-split-tabs" class="chip" title="Dividir abas lado a lado">⧉ Split</button>
+      </div>
+    </div>
+    <div id="tabs-list" class="tabs-list" role="list">
+      <div class="empty">Carregando sessões abertas...</div>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Lançador Rápido Multi-Agent">
+    <div class="panel-head">
+      <span>Começar Vários Agents Agora</span>
+      <div class="row-inline">
+        <label class="muted" for="quick-count">Qtd:</label>
+        <input id="quick-count" type="number" min="2" max="60" value="3" class="num-input" aria-label="Quantidade de agentes" />
+      </div>
+    </div>
+    <textarea id="quick-prompt" class="textarea" aria-label="Prompt inicial dos agentes" placeholder="Digite o prompt para abrir múltiplos chats em arena.ai/agent com Auto-Continue ligado (mínimo humano no loop)..."></textarea>
+    <div class="row-between" style="margin-bottom:6px;padding:4px 7px;border-radius:7px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.38);">
+      <label class="chk-label" style="color:#fda4af;font-weight:600;" title="Para imediatamente modelos que mostrem '> Thinking...' ou 'Thought for X seconds' e só adiciona ao Time modelos sem Thinking">
+        <input id="quick-refuse-thinking" type="checkbox" checked />
+        <span>🚫 Recusar Modelos Thinking (Padrão)</span>
+      </label>
+    </div>
+    <div class="row-between" style="margin-bottom:5px;">
+      <label class="chk-label" style="color:#67e8f9;font-weight:600;">
+        <input id="quick-collab" type="checkbox" />
+        <span>🤝 Modo Colaboração (TempChat Isolado)</span>
+      </label>
+      <select id="quick-collab-stop" class="num-input" style="width:auto;padding:3px 6px;display:none;" aria-label="Critério de Conclusão" title="Critério de Conclusão">
+        <option value="smart_consensus">Consenso Verificável</option>
+        <option value="endless_tokens">Até Esgotar Tokens</option>
+      </select>
+    </div>
+    <div class="row-between" style="margin-bottom:6px;">
+      <label class="chk-label" style="color:#c4b5fd;font-weight:600;" title="Ou basta colar qualquer link github.com/... direto no texto do prompt acima!">
+        <input id="quick-github" type="checkbox" />
+        <span id="quick-github-lbl">🐙 GitHub CAS + Auto-PR</span>
+      </label>
+      <label class="chk-label" title="Filebin.net + Litterbox + Uguu.se + x0.at">
+        <input id="quick-tempfiles" type="checkbox" checked />
+        <span>📦 TempFiles (4 Hosts)</span>
+      </label>
+    </div>
+    <div id="quick-github-box" style="display:none;margin-bottom:6px;">
+      <input id="quick-github-repo" class="num-input" style="width:100%;text-align:left;padding:5px 8px;" aria-label="Link do repositório GitHub" placeholder="Cole o link: https://github.com/usuario/projeto (CAS Direto Zero-Token)" />
+    </div>
+    <div class="row-between">
+      <label class="chk-label" title="Autorização única por tarefa: roda autonomamente e só pausa se estritamente precisar de você">
+        <input id="quick-autoloop" type="checkbox" checked />
+        <span>⚡ Autorizar &amp; Rodar Autônomo</span>
+      </label>
+      <button id="btn-quick-launch" class="btn btn-primary" aria-label="Autorizar e Lançar Agentes">🚀 Autorizar e Rodar</button>
+    </div>
+    <div id="launch-feedback" class="feedback" role="status" aria-live="polite"></div>
+  </section>
+
+  <footer class="footer">
+    <span class="muted">Tema:</span>
+    <div id="theme-pills" class="theme-pills" role="group" aria-label="Seleção de Tema"></div>
+  </footer>
+
+  <script src="../shared/i18n.js"></script>
+  <script src="../shared/cred-broker.js"></script>
+  <script src="../shared/diff-engine.js"></script>
+  <script src="../shared/arena-adapter.js"></script>
+  <script src="../shared/scheduler.js"></script>
+  <script src="../shared/plugin-runtime.js"></script>
+  <script src="../shared/defaults.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="../shared/integrations.js"></script>
+  <script src="../shared/agent-kit.js"></script>
+  <script src="../shared/harness-engine.js"></script>
+  <script src="../shared/collab-engine.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

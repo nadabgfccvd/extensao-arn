@@ -1,0 +1,29 @@
+name: Arena Ultra v4.0.0 CI & Homologation
+
+on:
+  push:
+    branches: ["main", "master", "feat/**"]
+  pull_request:
+
+jobs:
+  homologate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Python 3.12 (for /tmp/au_chat & /tmp/au_gh CLI verification)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify Manifest, CSP, Permissions & Zero-Secret Invariants
+        run: node scripts/verify-extension.js
+
+      - name: Run Full v4.0.0 Homologation Matrix (A01-A24)
+        run: node --test tests/*.test.js

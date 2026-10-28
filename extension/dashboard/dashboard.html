@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arena Ultra — Central de Comando & Autopilot</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="../icons/icon48.png" alt="Arena Ultra" class="brand-logo" />
+        <div>
+          <div class="brand-title">Arena Ultra</div>
+          <div class="brand-sub">Suíte Completa • v4.0.0</div>
+        </div>
+      </div>
+
+      <nav class="nav" role="navigation" aria-label="Navegação Principal">
+        <button class="nav-item active" data-sec="mission">Mission Control (Abas ao Vivo)</button>
+        <button class="nav-item" data-sec="launcher">Lançador Multi-Agent</button>
+        <button class="nav-item" data-sec="collab">🤝 Sala TempChat (Colaboração)</button>
+        <button class="nav-item" data-sec="integrations">🐙 Cofre GitHub &amp; Arquivos Temp</button>
+        <button class="nav-item" data-sec="v4hub">⚡ Agendador, Memória &amp; Auditoria v4.0</button>
+        <button class="nav-item" data-sec="autocontinue">Auto-Continue, Regras &amp; Alertas</button>
+        <button class="nav-item" data-sec="prompts">Prompts, Comandos "/" &amp; Macros</button>
+        <button class="nav-item" data-sec="history">Histórico, Pastas &amp; Exportação</button>
+        <button class="nav-item" data-sec="analytics">Estatísticas Agent &amp; Battle</button>
+        <button class="nav-item" data-sec="visual">Temas, UI/UX &amp; Backup</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="side-emergency-stop" class="btn btn-danger-kill" style="width:100%;margin-bottom:6px;" title="Kill Switch Global: para todas as salas e abas Autopilot em < 2s">🛑 PARAR TUDO</button>
+        <button id="side-open-livechat" class="btn" style="width:100%;margin-bottom:6px;border-color:rgba(6,182,212,0.55);color:#67e8f9;">⚡ Abrir Guia Chat Live ↗</button>
+        <button id="side-new-agent" class="btn btn-primary" style="width:100%;">+ Novo Chat Agent</button>
+        <div class="muted" style="text-align:center;margin-top:8px;">100% Mouse-Driven • Mínimo Humano no Loop</div>
+      </div>
+    </aside>
+
+    <main class="main" role="main">
+      <!-- v4.0 Top Global Search, Locale & Kill Switch Bar -->
+      <div class="top-utility-bar" role="search">
+        <div class="row" style="flex:1;max-width:580px;">
+          <input id="dash-global-search-input" class="input" placeholder="🔍 Busca Global (conversas salvas, mensagens das salas, prompts, macros)..." aria-label="Busca Global" />
+          <button id="dash-global-search-btn" class="btn">Buscar</button>
+        </div>
+        <div class="row">
+          <select id="dash-locale-select" class="select" style="width:auto;" aria-label="Idioma da Interface" title="Idioma (UX-01)">
+            <option value="pt-BR">🇧🇷 PT-BR</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="es">🇪🇸 Español</option>
+          </select>
+          <button id="top-tour-btn" class="btn btn-sm" title="Ver guia rápido de autonomia v4.0">❓ Guia Rápido</button>
+          <button id="top-emergency-stop" class="btn btn-sm btn-danger-kill" title="Para imediatamente todas as salas e abas em Autopilot">🛑 PARAR TUDO</button>
+        </div>
+      </div>
+      <div id="dash-global-search-results" class="card" style="display:none;margin-bottom:16px;"></div>
+      <!-- 1. MISSION CONTROL -->
+      <section id="sec-mission" class="section active">
+        <div class="sec-header">
+          <div>
+            <h1>Mission Control — Orquestração Multi-Abas</h1>
+            <p class="muted">Monitore e controle todos os seus chats do Arena.ai rodando simultaneamente em tempo real.</p>
+          </div>
+          <div class="row">
+            <button id="mc-pause-all" class="btn">⏸ Pausar Todas</button>
+            <button id="mc-resume-all" class="btn btn-primary">▶ Retomar Todas</button>
+            <button id="mc-group-tabs" class="btn">Agrupar Abas</button>
+            <button id="mc-split-tabs" class="btn">⧉ Dividir Janelas</button>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-val" id="mc-kpi-open">0</span>
+            <span class="kpi-lbl">Abas Arena Abertas</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val emerald" id="mc-kpi-active">0</span>
+            <span class="kpi-lbl">Autopilots Rodando Agora</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val" id="mc-kpi-loops">0</span>
+            <span class="kpi-lbl">Total de Loops Enviados</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val danger" id="mc-kpi-stopped">0</span>
+            <span class="kpi-lbl">Paradas por Falta de Tokens</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Comando em Massa (Broadcast para Todas as Abas Abertas)</h2>
+          </div>
+          <div class="row">
+            <input id="mc-broadcast-input" class="input" placeholder="Digite um prompt para enviar simultaneamente a todas as abas abertas do Arena.ai..." />
+            <button id="mc-broadcast-btn" class="btn btn-primary">Enviar em Massa</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Sessões Abertas no Navegador</h2>
+            <span class="muted">Atualização automática a cada 2s • Motor Anti-Congelamento Ativo</span>
+          </div>
+          <div id="mc-tabs-container" class="stack"></div>
+        </div>
+      </section>
+
+      <!-- 2. MULTI-AGENT LAUNCHER -->
+      <section id="sec-launcher" class="section">
+        <div class="sec-header">
+          <div>
+            <h1>Lançador Multi-Agent em Paralelo</h1>
+            <p class="muted">Comece vários chats no modo Agent ao mesmo tempo com Auto-Continue já ligado em todos.</p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h2>1. Modo de Disparo</h2>
+            <label class="lbl">Tipo de Lote</label>
+            <select id="ln-mode" class="select">
+              <option value="swarm">Enxame (Mesmo prompt em N abas Agent para comparar soluções)</option>
+              <option value="task_list">Lista de Tarefas (1 linha = 1 aba Agent independente)</option>
+              <option value="matrix">Matriz de Variáveis (Template base + lista de valores)</option>
+            </select>
+
+            <div id="ln-box-swarm" class="stack" style="margin-top:10px;">
+              <div class="row">
+                <div style="flex:1;">
+                  <label class="lbl">Quantidade de Chats Simultâneos</label>
+                  <input id="ln-swarm-count" type="number" min="2" max="60" value="4" class="input" />
+                </div>
+                <div style="flex:1;">
+                  <label class="lbl">Intervalo entre Abas (ms)</label>
+                  <input id="ln-stagger" type="number" min="1500" max="20000" value="4500" class="input" />
+                </div>
+              </div>
+              <label class="lbl">Objetivo Conjunto do Time Unido</label>
+              <textarea id="ln-swarm-prompt" class="textarea" rows="5" placeholder="Descreva o projeto ou objetivo: os N Agents vão conversar no TempChat, dividir os papéis/arquivos sem sobreposição e colaborar como UM ÚNICO TIME UNIDO..."></textarea>
+            </div>
+
+            <div id="ln-box-tasks" class="stack" style="display:none;margin-top:10px;">
+              <label class="lbl">Lista de Tarefas (1 tarefa por linha — cada linha abrirá 1 chat Agent)</label>
+              <textarea id="ln-tasks-text" class="textarea" rows="7" placeholder="Crie uma landing page SaaS moderna com calculadora de preços&#10;Crie um dashboard financeiro completo com gráficos SVG&#10;Crie uma API REST documentada com testes automatizados"></textarea>
+            </div>
+
+            <div id="ln-box-matrix" class="stack" style="display:none;margin-top:10px;">
+              <label class="lbl">Template Base (use {{variavel}})</label>
+              <textarea id="ln-matrix-tpl" class="textarea" rows="4" placeholder="Construa um aplicativo web completo focado em {{nicho}} com persistência de dados e preview ao vivo."></textarea>
+              <label class="lbl">Nome da Variável</label>
+              <input id="ln-matrix-var" class="input" value="nicho" />
+              <label class="lbl">Valores (1 por linha — gerará 1 aba Agent para cada valor)</label>
+              <textarea id="ln-matrix-vals" class="textarea" rows="4" placeholder="Clínicas Odontológicas&#10;Escritórios de Advocacia&#10;Academias & Personal Trainers"></textarea>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>2. Automação & Workflow Pós-Abertura</h2>
+            <label class="lbl">URL de Destino</label>
+            <input id="ln-url" class="input" value="https://arena.ai/agent" />
+
+            <label class="lbl" style="margin-top:8px;">Anexar Macro de Etapas Sequenciais (Opcional)</label>
+            <select id="ln-macro" class="select">
+              <option value="">Sem fila extra (entrar direto no Loop Contínuo)</option>
+            </select>
+
+            <label class="lbl" style="margin-top:8px;">Nome do Grupo de Abas no Navegador</label>
+            <input id="ln-group-name" class="input" value="Arena Ultra • Agents" />
+
+            <div class="stack" style="margin-top:12px;">
+              <label class="chk">
+                <input id="ln-autoloop" type="checkbox" checked />
+                <span>Ativar Auto-Continue automaticamente em todas as abas abertas (só para quando acabarem os tokens)</span>
+              </label>
+              <label class="chk">
+                <input id="ln-autogroup" type="checkbox" checked />
+                <span>Agrupar abas automaticamente em um Tab Group colorido</span>
+              </label>
+            </div>
+
+            <div class="item-box" style="margin-top:12px;border-color:rgba(244,63,94,0.45);background:rgba(244,63,94,0.08);">
+              <label class="chk" style="font-weight:700;color:#fda4af;">
+                <input id="ln-refuse-thinking" type="checkbox" checked />
+                <span>🚫 Modo Recusa de Modelos Thinking (Padrão Ativado)</span>
+              </label>
+              <p class="muted" style="margin:5px 0 0 0;font-size:12px;">
+                Para imediatamente modelos que mostrem <code>&gt; Thinking...</code>, <code>🧠 Thinking...</code> ou <code>🧠 Thought for X seconds</code>, sorteia um novo chat <code>/agent</code> automaticamente e <strong>só adiciona o agente ao Time Colaborativo quando confirmado sem Thinking</strong>.
+              </p>
+            </div>
+
+            <div class="item-box" style="margin-top:14px;border-color:rgba(6,182,212,0.45);background:rgba(6,182,212,0.07);">
+              <label class="chk" style="font-weight:700;color:#67e8f9;">
+                <input id="ln-collab-enabled" type="checkbox" />
+                <span>🤝 Ativar Modo Colaboração (Sala TempChat Multi-Agent)</span>
+              </label>
+              <p class="muted" style="margin:6px 0 8px 0;font-size:12px;">
+                Coloca todos os Agents lançados numa Sala TempChat de 4 dígitos (estilo <code>tempchat.online</code>) para dividirem o trabalho, revisarem soluções entre si e produzirem um resultado melhor e mais rápido.
+              </p>
+              <div id="ln-collab-fields" class="stack" style="display:none;">
+                <div>
+                  <label class="lbl">Dinâmica da Equipe Colaborativa</label>
+                  <select id="ln-collab-profile" class="select">
+                    <option value="specialists">Equipe de Especialistas (Arquiteto + Implementador + QA + Sintetizador)</option>
+                    <option value="parallel_leader">Divisão Paralela de Frentes + Líder Sintetizador</option>
+                    <option value="debate_consensus">Debate & Consenso entre Pares (Crítica Cruzada)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="lbl">Critério de Conclusão & Prazo Limite (SLA) da Integração Final</label>
+                  <div class="row">
+                    <select id="ln-collab-stop" class="select" style="flex:2;">
+                      <option value="smart_consensus">Parada Inteligente (Para todos quando a Entrega Final Consolidada ficar pronta)</option>
+                      <option value="endless_tokens">Refinamento Contínuo (Continua colaborando até esgotar os tokens)</option>
+                    </select>
+                    <input id="ln-collab-timeout" type="number" min="3" max="240" value="25" class="input" style="flex:0.8;" title="Tempo limite em minutos para liberar a Integração Final automaticamente" placeholder="SLA (min)" />
+                  </div>
+                </div>
+                <div class="row" style="align-items:center;">
+                  <label class="chk" style="flex:1;">
+                    <input id="ln-collab-external" type="checkbox" />
+                    <span>🌐 Espelhar ao vivo em uma aba real do <code>tempchat.online</code></span>
+                  </label>
+                  <input id="ln-collab-joincode" class="input" maxlength="4" style="width:165px;" placeholder="Código 4 díg (opc.)" title="Opcional: entrar numa sala de 4 dígitos já aberta no tempchat.online" />
+                </div>
+              </div>
+            </div>
+
+            <div class="item-box" style="margin-top:12px;border-color:rgba(139,92,246,0.45);background:rgba(139,92,246,0.07);">
+              <label class="chk" style="font-weight:700;color:#c4b5fd;">
+                <input id="ln-gh-enabled" type="checkbox" />
+                <span>🐙 Integrar Lote com meu GitHub (Clone, Branch, Push & Pull Request)</span>
+              </label>
+              <div id="ln-gh-fields" class="stack" style="display:none;margin-top:8px;">
+                <div class="row">
+                  <div style="flex:2.4;">
+                    <label class="lbl">🔗 Link do Repositório GitHub (Público ou Privado) ou usuario/repo</label>
+                    <input id="ln-gh-repo" class="input" placeholder="Cole o link: https://github.com/usuario/meu-projeto (ou /tree/branch)" />
+                  </div>
+                  <div style="flex:0.9;">
+                    <label class="lbl">Branch Base</label>
+                    <input id="ln-gh-base" class="input" value="main" placeholder="main / master" />
+                  </div>
+                </div>
+                <div>
+                  <label class="lbl">🔑 Token PAT do GitHub (opcional p/ repositório público • obrigatório p/ privado ou git push)</label>
+                  <input id="ln-gh-token" type="password" class="input" placeholder="Deixe vazio p/ clonar GitHub público, ou cole ghp_... / github_pat_... p/ privado & push" />
+                </div>
+                <div class="row">
+                  <div style="flex:1;">
+                    <label class="lbl">Modo de Autenticação / Cofre GitHub</label>
+                    <select id="ln-gh-auth" class="select">
+                      <option value="vault_broker_zero_token">🔐 Cofre Zero-Token no Prompt (Broker + CAS Direto • Recomendado)</option>
+                      <option value="extension_proxy_push">Push Seguro via Extensão (CAS Direto / Bundle AES-256-GCM)</option>
+                    </select>
+                  </div>
+                  <div style="flex:1;">
+                    <label class="lbl">Estratégia de Branches</label>
+                    <select id="ln-gh-branch" class="select">
+                      <option value="branch_per_agent_pr">Branch por Agente + Merge/PR pelo Líder</option>
+                      <option value="single_shared_branch">Branch Única Compartilhada (pull --rebase)</option>
+                    </select>
+                  </div>
+                  <div style="flex:1;">
+                    <label class="lbl">Acesso Central por Agente (RBAC)</label>
+                    <select id="ln-gh-default-rbac" class="select">
+                      <option value="auto_role">Automático por Papel (Líder=PR, Dev=Branch/PR, QA=Leitura)</option>
+                      <option value="push_and_pr">Todos: Push + Abrir PR</option>
+                      <option value="push_branch">Especialistas: Só Branch (Líder abre PR)</option>
+                      <option value="read_only">Todos: Somente Leitura (Auditoria)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <label class="chk" style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
+                <input id="ln-tf-enabled" type="checkbox" checked />
+                <span>📦 Ativar Hub de 4 Sites de Arquivo Temporário (<strong>Filebin.net</strong> + <strong>Litterbox</strong> + <strong>Uguu.se</strong> + <strong>x0.at</strong> com fallback automático)</span>
+              </label>
+            </div>
+
+            <div class="stack" style="margin-top:16px;">
+              <button id="ln-submit" class="btn btn-primary" style="width:100%;padding:12px;font-size:14px;">
+                🚀 Iniciar Todos os Chats Agent Agora
+              </button>
+              <button id="ln-unite-open" class="btn" style="width:100%;border-color:rgba(6,182,212,0.5);color:#67e8f9;">
+                🤝 Unir Abas Abertas Agora numa Sala TempChat
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2B. TEMPCHAT COLLABORATION CONSOLE -->
+      <section id="sec-collab" class="section">
+        <div class="sec-header">
+          <div>
+            <h1>🤝 Sala TempChat — Colaboração Multi-Agent ao Vivo</h1>
+            <p class="muted">Sala temporária de 4 dígitos onde seus Agents compartilham descobertas, código e revisões em tempo real — com sua coordenação ao vivo.</p>
+          </div>
+          <div class="row">
+            <button id="cb-open-livechat-btn" class="btn btn-primary" style="background:#0891b2;border-color:#06b6d4;">⚡ Abrir Guia Chat Live ↗</button>
+            <button id="cb-unite-open-btn" class="btn">+ Unir Abas Abertas numa Nova Sala</button>
+            <button id="cb-open-external-btn" class="btn">🌐 Ponte tempchat.online</button>
+            <button id="cb-close-room-btn" class="btn btn-danger">Encerrar Sala</button>
+          </div>
+        </div>
+
+        <div class="card" id="cb-controls-card">
+          <div class="row" style="flex-wrap:wrap;gap:12px;align-items:flex-end;">
+            <div style="flex:2;min-width:220px;">
+              <label class="lbl">Sala TempChat Selecionada (Código 4 Dígitos)</label>
+              <select id="cb-room-select" class="select">
+                <option value="">Nenhuma sala TempChat ativa</option>
+              </select>
+            </div>
+            <div style="flex:2;min-width:220px;">
+              <label class="lbl">Modo de Conclusão (editável em tempo real)</label>
+              <select id="cb-stop-mode" class="select">
+                <option value="smart_consensus">Parada Inteligente na Entrega Final Consolidada</option>
+                <option value="endless_tokens">Refinamento Contínuo até Esgotar Tokens</option>
+              </select>
+            </div>
+            <div class="row" style="gap:8px;">
+              <button id="cb-pause-room-btn" class="btn">⏸ Pausar Sala</button>
+              <button id="cb-resume-room-btn" class="btn btn-primary">▶ Retomar Sala</button>
+            </div>
+          </div>
+          <div id="cb-sla-bar" class="item-box" style="display:none;margin-top:10px;border-color:rgba(6,182,212,0.45);background:rgba(6,182,212,0.08);">
+            <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;">
+              <div>
+                <strong id="cb-sla-state" style="color:#67e8f9;">🟡 Inicializando</strong>
+                <span id="cb-sla-details" class="muted" style="margin-left:8px;">Prazo: --</span>
+              </div>
+              <div class="row" style="gap:6px;">
+                <button id="cb-sla-add10-btn" class="btn btn-sm">+10m Prazo</button>
+                <button id="cb-sla-force-btn" class="btn btn-sm btn-primary">🎯 Liberar Integração Final</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card" style="display:flex;flex-direction:column;">
+            <div class="card-head">
+              <h2 id="cb-stream-heading">Feed TempChat em Tempo Real (Deduplicado)</h2>
+              <span id="cb-room-badge" class="badge">SEM SALA</span>
+            </div>
+            <div id="cb-messages-feed" class="stack" style="height:430px;overflow-y:auto;padding:12px;background:#0a0c10;border:1px solid #1f2430;border-radius:10px;">
+              <div class="muted">Lance um lote Multi-Agent com Modo Colaboração ativado ou clique em "+ Unir Abas Abertas numa Nova Sala".</div>
+            </div>
+            <div class="row" style="margin-top:12px;">
+              <input id="cb-coord-input" class="input" placeholder="Converse ao vivo com toda a equipe Agent (suas orientações entram no próximo turno de todos)..." />
+              <button id="cb-coord-send" class="btn btn-primary">Enviar na Sala</button>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card">
+              <div class="card-head">
+                <h2>Equipe Multi-Agent & Gestão Central de Acesso (RBAC)</h2>
+                <span id="cb-ext-code-pill" class="muted">Ponte interna zero-latência</span>
+              </div>
+              <div id="cb-agents-roster" class="stack">
+                <div class="muted">Nenhum agente conectado no momento.</div>
+              </div>
+            </div>
+
+            <div class="card" id="cb-shared-board-card" style="border-color:rgba(6,182,212,0.45);">
+              <div class="card-head">
+                <h2>📋 Quadro Compartilhado de Atribuições & Contratos (Atualização Única)</h2>
+                <span id="cb-board-rev" class="badge">rev #1</span>
+              </div>
+              <div class="row" style="gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+                <input id="cb-contract-key" class="input" style="max-width:150px;" placeholder="Chave (ex: api/auth)" />
+                <input id="cb-contract-spec" class="input" style="flex:1;min-width:180px;" placeholder="Contrato único (ex: POST /login -> {token})" />
+                <button id="cb-contract-save-btn" class="btn btn-sm btn-primary">Salvar Único</button>
+              </div>
+              <div id="cb-board-view" class="stack" style="max-height:210px;overflow-y:auto;">
+                <div class="muted">Contratos únicos, atribuições por agente e branches/PRs detectados aparecerão aqui sem duplicatas.</div>
+              </div>
+            </div>
+
+            <div class="card" id="cb-files-gh-card" style="border-color:rgba(139,92,246,0.45);">
+              <div class="card-head">
+                <h2>📦 Arquivos Temporários (4 Hosts) & GitHub da Sala</h2>
+                <div class="row" style="gap:6px;">
+                  <a id="cb-open-filebin" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="text-decoration:none;display:none;">🗂️ Abrir Filebin</a>
+                  <button id="cb-sync-filebin" class="btn btn-sm">🔄 Sincronizar Bucket</button>
+                </div>
+              </div>
+              <div id="cb-gh-room-box" class="item-box" style="display:none;margin-bottom:8px;border-color:rgba(139,92,246,0.4);background:rgba(139,92,246,0.08);"></div>
+              <div class="row" style="margin-bottom:8px;flex-wrap:wrap;">
+                <input type="file" id="cb-upload-file" style="display:none;" />
+                <select id="cb-upload-provider" class="select" style="flex:1;min-width:190px;">
+                  <option value="filebin">Filebin.net (+ Fallback Automático p/ outros 3)</option>
+                  <option value="litterbox">Litterbox Catbox (+ Fallback Automático)</option>
+                  <option value="uguu">Uguu.se (+ Fallback Automático)</option>
+                  <option value="x0at">x0.at (+ Fallback Automático)</option>
+                </select>
+                <button id="cb-upload-btn" class="btn btn-primary">📤 Enviar Arquivo do PC p/ Sala</button>
+              </div>
+              <div id="cb-shared-files-list" class="stack" style="max-height:190px;overflow-y:auto;">
+                <div class="muted">Os arquivos compartilhados pelos Agents via Filebin, Litterbox, Uguu.se ou x0.at aparecerão aqui automaticamente.</div>
+              </div>
+            </div>
+
+            <div class="card" id="cb-final-card" style="border-color:rgba(16,185,129,0.5);">
+              <div class="card-head">
+                <h2 style="color:#6ee7b7;">✅ Entrega Final Consolidada da Equipe</h2>
+                <div class="row">
+                  <button id="cb-copy-final" class="btn btn-sm">Copiar</button>
+                  <button id="cb-dl-final" class="btn btn-sm btn-primary">⬇ Baixar .md</button>
+                </div>
+              </div>
+              <div id="cb-final-meta" class="muted" style="margin-bottom:8px;">Assim que o Sintetizador / Equipe publicar <code>[ENTREGA_FINAL_PRONTA]</code>, a solução consolidada aparece aqui.</div>
+              <pre id="cb-final-content" style="margin:0;max-height:250px;overflow:auto;white-space:pre-wrap;word-break:break-word;padding:12px;border-radius:8px;background:#0a0c10;border:1px solid #1f2430;font-size:12.5px;color:#e4e4e7;">Aguardando consolidação da equipe...</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2C. GITHUB & TEMPORARY FILE SHARING HUB -->
+      <section id="sec-integrations" class="section">
+        <div class="sec-header">
+          <div>
+            <h1>🐙 Integração GitHub & Hub de 4 Sites de Arquivo Temporário</h1>
+            <p class="muted">Conecte seu GitHub para os Agents clonarem, criarem branches, enviarem commits/PRs e trocarem arquivos via Filebin.net, Litterbox, Uguu.se e x0.at.</p>
+          </div>
+          <div class="row">
+            <span id="gh-user-badge" class="badge">GitHub Desconectado</span>
+            <button id="gh-save-all-btn" class="btn btn-primary">Salvar Integrações</button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <h2>🐙 GitHub Autônomo (Code + Issues + PRs + Actions + Wiki)</h2>
+              <div class="row" style="gap:6px;flex-wrap:wrap;">
+                <a href="https://github.com/settings/tokens/new?scopes=repo,workflow,project&description=Arena+Ultra+Autonomous+PR" target="_blank" rel="noopener" class="btn btn-sm" style="text-decoration:none;border-color:rgba(245,158,11,0.55);color:#fcd34d;" title="Abre o GitHub já com as permissões repo + workflow + project marcadas para os Agents criarem PRs e rodarem Actions sozinhos!">🔑 Gerar Token PAT Pronto</a>
+                <button id="gh-test-link-btn" class="btn btn-sm" style="border-color:rgba(16,185,129,0.5);color:#6ee7b7;">🔍 Testar Link / Acesso</button>
+                <button id="gh-verify-btn" class="btn btn-sm btn-primary">Carregar Meus Repos</button>
+              </div>
+            </div>
+
+            <div class="row" style="align-items:flex-end;">
+              <div style="flex:2.6;">
+                <label class="lbl">🔗 Link do Repositório GitHub (ex.: https://github.com/nadabgfccvd/My-Path)</label>
+                <input id="gh-default-repo" class="input" placeholder="Cole o link: https://github.com/usuario/meu-projeto (ou /issues, /pulls, /tree/branch)" />
+              </div>
+              <div style="flex:0.9;">
+                <label class="lbl">Branch Base</label>
+                <input id="gh-base-branch" class="input" value="main" placeholder="main / master" />
+              </div>
+            </div>
+
+            <div id="gh-access-status" style="display:none;margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12px;"></div>
+
+            <div style="margin-top:10px;">
+              <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <label class="lbl" style="margin:0;">🔑 Personal Access Token (Cofre Zero-Token • Escopos & Expiração Auditados)</label>
+                <div class="row" style="gap:6px;">
+                  <button id="gh-inspect-token-btn" class="btn btn-sm" style="border-color:rgba(6,182,212,0.5);color:#67e8f9;">🛡️ Auditar Escopos & Validade</button>
+                  <button id="gh-revoke-vault-btn" class="btn btn-sm btn-danger" title="Revogar imediatamente a credencial da memória e rotacionar chaves dos agentes">🚫 Revogar Cofre</button>
+                </div>
+              </div>
+              <div class="row" style="gap:6px;">
+                <input id="gh-token-input" type="password" class="input" style="flex:1;" placeholder="Cole ghp_... ou github_pat_... (salvo apenas em memória volátil storage.session — zero texto puro em disco!)" />
+                <button id="gh-reveal-token-btn" type="button" class="btn btn-sm" title="Revelar por 10 segundos e ocultar automaticamente (SEC-02)">👁️ 10s</button>
+              </div>
+              <div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">
+                <input id="gh-vault-passphrase" type="password" class="input" style="flex:1;min-width:210px;" placeholder="🔒 Senha opcional p/ Cofre Persistente Cifrado (PBKDF2 100k + AES-256-GCM)" />
+                <button id="gh-encrypt-save-btn" type="button" class="btn btn-sm" title="Salvar PAT cifrado em disco com AES-256-GCM">🔐 Salvar Cifrado</button>
+                <button id="gh-encrypt-unlock-btn" type="button" class="btn btn-sm btn-primary" title="Destravar Cofre Cifrado para a sessão atual">🔓 Destravar Cofre</button>
+              </div>
+              <div id="gh-token-health-box" class="item-box" style="margin-top:8px;border-color:rgba(6,182,212,0.4);background:rgba(6,182,212,0.06);font-size:12px;">
+                <div class="muted">🔐 <strong>Cofre de Credenciais Git Zero-Token (SEC-01/SEC-02):</strong> PAT mantido exclusivamente em <code>storage.session</code> (ou cifrado com PBKDF2 + AES-256-GCM), nunca exposto em prompts, logs ou backups.</div>
+              </div>
+            </div>
+
+            <div style="margin-top:10px;">
+              <label class="lbl">Ou Selecione um Repositório da sua Conta (Públicos + Privados)</label>
+              <select id="gh-repo-dropdown" class="select">
+                <option value="">Cole o link acima ou clique em "Carregar Meus Repos" (com Token PAT)...</option>
+              </select>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <div style="flex:1.2;">
+                <label class="lbl">Modo de Integração / Cofre GitHub Padrão</label>
+                <select id="gh-auth-mode" class="select">
+                  <option value="vault_broker_zero_token">🔐 Cofre Zero-Token no Prompt (Broker + CAS Direto • Sem expor PAT!)</option>
+                  <option value="extension_proxy_push">Push &amp; PR via Extensão (CAS Direto / AES-256-GCM)</option>
+                </select>
+              </div>
+              <div style="flex:1;">
+                <label class="lbl">Estratégia de Branches Multi-Agent</label>
+                <select id="gh-branch-mode" class="select">
+                  <option value="branch_per_agent_pr">Branch por Agente + PR Automático sem Humano no Loop</option>
+                  <option value="single_shared_branch">Branch Única Compartilhada (git pull --rebase)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <div style="flex:1;">
+                <label class="lbl">⏳ Duração Máxima da Credencial na Sessão do Cofre (TTL)</label>
+                <select id="gh-vault-ttl" class="select">
+                  <option value="60">1 hora na sessão</option>
+                  <option value="240">4 horas na sessão</option>
+                  <option value="480" selected>8 horas na sessão (Recomendado)</option>
+                  <option value="1440">24 horas na sessão</option>
+                  <option value="0">Sem expiração de sessão (até revogar manualmente)</option>
+                </select>
+              </div>
+              <div style="flex:1;">
+                <label class="lbl">🛡️ Gestão Centralizada Padrão de Acesso por Agente (RBAC)</label>
+                <select id="gh-default-agent-rbac" class="select">
+                  <option value="auto_role">Automático por Papel (Líder=PR, Dev=Branch/PR, QA=Leitura)</option>
+                  <option value="push_and_pr">Todos com Push + Pull Request</option>
+                  <option value="push_branch">Especialistas só Push Branch (Líder abre PR)</option>
+                  <option value="read_only">Todos Somente Leitura (Auditoria segura)</option>
+                </select>
+              </div>
+            </div>
+
+            <label class="chk" style="margin-top:10px;color:#6ee7b7;font-weight:600;">
+              <input id="gh-auto-pr" type="checkbox" checked />
+              <span>🚀 Criar e Atualizar Pull Requests Automaticamente sem Você no Loop (CLI <code>pr-ship</code> + Cofre CAS)</span>
+            </label>
+            <label class="chk" style="margin-top:6px;color:#67e8f9;font-weight:600;">
+              <input id="gh-auto-notify-refs" type="checkbox" checked />
+              <span>🔔 Radar Git Automático: avisar os Agents e o Chat Live imediatamente quando novas branches ou PRs surgirem!</span>
+            </label>
+            <label class="chk" style="margin-top:6px;">
+              <input id="gh-auto-detect-url" type="checkbox" checked />
+              <span>🔗 Auto-Detectar Links <code>github.com/...</code> dentro dos seus Prompts (conecta automaticamente mesmo sem marcar caixas!)</span>
+            </label>
+            <label class="chk" style="margin-top:6px;">
+              <input id="gh-enable-default" type="checkbox" checked />
+              <span>Já deixar GitHub marcado por padrão ao abrir o Lançador Multi-Agent / Colaboração</span>
+            </label>
+
+            <div class="item-box" style="margin-top:12px;border-color:rgba(16,185,129,0.38);background:rgba(16,185,129,0.06);">
+              <div class="item-top" style="margin-bottom:6px;">
+                <strong style="color:#6ee7b7;">📥 Enviar / Clonar este Link GitHub num Agent Agora (1 Clique)</strong>
+              </div>
+              <div class="row" style="flex-wrap:wrap;gap:8px;">
+                <select id="gh-clone-target-tab" class="select" style="flex:1.2;min-width:190px;">
+                  <option value="">➕ Abrir Nova Aba Arena Agent com este Repositório</option>
+                </select>
+                <input id="gh-clone-prompt" class="input" style="flex:2;min-width:220px;" placeholder="Tarefa p/ o Agent (ex: Clone este repositório, analise o código e implemente...)" />
+                <button id="gh-clone-send-btn" class="btn btn-primary">🐙 Conectar Repo no Agent</button>
+              </div>
+            </div>
+
+            <div class="item-box" style="margin-top:10px;">
+              <div class="item-top" style="margin-bottom:6px;">
+                <strong>✨ Criar Novo Repositório no seu GitHub (1 Clique)</strong>
+              </div>
+              <div class="row" style="flex-wrap:wrap;">
+                <input id="gh-create-name" class="input" style="flex:1;min-width:150px;" placeholder="nome-do-novo-repo" />
+                <input id="gh-create-desc" class="input" style="flex:2;min-width:180px;" placeholder="Descrição opcional do projeto..." />
+                <label class="chk"><input id="gh-create-private" type="checkbox" checked /> <span>Privado</span></label>
+                <button id="gh-create-repo-btn" class="btn">Criar Repo</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card">
+              <div class="card-head">
+                <h2>🚀 Push Direto de Workspace (Aba Arena → GitHub)</h2>
+                <button id="gh-inspect-repo-btn" class="btn btn-sm">🔍 Inspecionar Branches & PRs</button>
+              </div>
+              <p class="muted" style="margin-top:0;font-size:12px;">
+                Baixa automaticamente o <code>/download-workspace</code> (.zip) de qualquer aba Agent aberta, descompacta em memória na extensão e cria um commit real via GitHub Git Data API — sem precisar expor seu token!
+              </p>
+              <div class="row">
+                <div style="flex:2;">
+                  <label class="lbl">Aba Arena Agent de Origem</label>
+                  <select id="gh-push-tab-select" class="select">
+                    <option value="">Carregando abas Arena abertas...</option>
+                  </select>
+                </div>
+                <div style="flex:1;">
+                  <label class="lbl">Branch de Destino</label>
+                  <input id="gh-push-branch" class="input" value="main" placeholder="ex: main ou feat/agent" />
+                </div>
+              </div>
+              <div class="row" style="margin-top:8px;align-items:center;">
+                <input id="gh-push-msg" class="input" style="flex:2;" placeholder="Mensagem do commit / título do PR (ex: feat: implementação completa pelo Arena Agent)" />
+                <label class="chk" title="Se a branch de destino for main/master, a extensão cria uma branch au/pr-... automaticamente e já abre o Pull Request!"><input id="gh-push-open-pr" type="checkbox" checked /> <span>Abrir PR Automático</span></label>
+                <button id="gh-push-now-btn" class="btn btn-primary">🐙 Commit & Abrir PR</button>
+              </div>
+              <div id="gh-repo-overview-box" class="stack" style="margin-top:10px;max-height:190px;overflow-y:auto;"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h2>📦 Hub de 4 Sites de Arquivo Temporário (Compartilhamento entre Agents)</h2>
+              </div>
+              <p class="muted" style="margin-top:0;font-size:12px;">
+                Testados ao vivo a partir do sandbox do Arena.ai: <strong>Filebin.net</strong> (pasta compartilhada por sala), <strong>Litterbox (Catbox)</strong> (até 200 MB), <strong>Uguu.se</strong> (até 128 MB) e <strong>x0.at</strong> (CLI ultra-rápido). Se um host oscilar, faz fallback automático para o próximo!
+              </p>
+              <div class="row">
+                <div style="flex:2;">
+                  <label class="lbl">Provedor Principal Preferido</label>
+                  <select id="tf-primary-provider" class="select">
+                    <option value="filebin">1. Filebin.net — Bucket compartilhado de 6 dias</option>
+                    <option value="litterbox">2. Litterbox (Catbox.moe) — Link direto até 72h</option>
+                    <option value="uguu">3. Uguu.se — Upload rápido até 128 MB</option>
+                    <option value="x0at">4. x0.at — Host minimalista raw p/ código & ZIPs</option>
+                  </select>
+                </div>
+                <div style="flex:1;">
+                  <label class="lbl">Expiração Litterbox</label>
+                  <select id="tf-litterbox-expiry" class="select">
+                    <option value="1h">1 Hora</option>
+                    <option value="12h">12 Horas</option>
+                    <option value="24h" selected>24 Horas</option>
+                    <option value="72h">72 Horas (3 dias)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row" style="margin-top:8px;">
+                <label class="chk" style="flex:1;">
+                  <input id="tf-auto-fallback" type="checkbox" checked />
+                  <span>Fallback Automático em Cascata (Filebin → Litterbox → Uguu → x0.at)</span>
+                </label>
+                <label class="chk" style="flex:1;">
+                  <input id="tf-enable-default" type="checkbox" checked />
+                  <span>Injetar comandos <code>au_upload</code> / <code>au_download</code> nos Agents</span>
+                </label>
+              </div>
+
+              <div class="item-box" style="margin-top:10px;">
+                <div class="item-top" style="margin-bottom:6px;">
+                  <strong>📤 Enviar Arquivo do seu PC agora (Gera Link + Comando pros Agents)</strong>
+                </div>
+                <div class="row" style="flex-wrap:wrap;">
+                  <input type="file" id="tf-quick-file" class="input" style="flex:2;min-width:190px;padding:6px;" />
+                  <select id="tf-quick-room" class="select" style="flex:1;min-width:170px;">
+                    <option value="">Apenas gerar link (sem sala)</option>
+                  </select>
+                  <button id="tf-quick-upload-btn" class="btn btn-primary">📤 Fazer Upload</button>
+                </div>
+                <div id="tf-quick-result" class="muted" style="margin-top:8px;font-size:12px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. AUTO-CONTINUE, RULES & ALERTS -->
+      <section id="sec-autocontinue" class="section">
+        <div class="sec-header">
+          <div>
+            <h1>Auto-Continue, Regras Condicionais & Alertas</h1>
+            <p class="muted">Configure o comportamento do loop contínuo, detecção imediata de falta de tokens e avisos.</p>
+          </div>
+          <button id="ac-save-btn" class="btn btn-primary">Salvar Configurações</button>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h2>Motor de Auto-Continue</h2>
+            <label class="lbl">Modo Padrão</label>
+            <select id="ac-strategy" class="select">
+              <option value="hybrid">Completo (Regras Condicionais -> Fila de Etapas -> Prompt Fixo)</option>
+              <option value="fixed">Prompt Fixo Configurável</option>
+              <option value="queue">Fila Sequencial + Loop Contínuo</option>
+              <option value="conditional">Regras Condicionais Inteligentes</option>
+            </select>
+
+            <label class="lbl" style="margin-top:8px;">Prompt Fixo Contínuo Padrão</label>
+            <textarea id="ac-fixed-prompt" class="textarea" rows="4"></textarea>
+            <label class="chk"><input id="ac-agent-kit-enabled" type="checkbox" /> Agent Kit via GitHub — ativar somente após publicar o pacote fixado</label>
+            <label class="chk"><input id="ac-harness-enabled" type="checkbox" /> Harness: checkpoints e validação por agente (novas sessões)</label>
+            <label class="lbl">Ciclo mínimo com timer real (minutos)</label>
+            <input id="ac-timer-minutes" type="number" min="60" max="480" step="60" class="input" />
+            <p class="muted">60 = uma hora; 120 = duas horas. Aplicado às novas sessões do lançador. Limites e PARAR têm prioridade.</p>
+
+            <div class="row" style="margin-top:8px;">
+              <div style="flex:1;">
+                <label class="lbl">Janela de Estabilização (ms)</label>
+                <input id="ac-settle-ms" type="number" min="1500" max="20000" class="input" />
+              </div>
+              <div style="flex:1;">
+                <label class="lbl">Delay Antes de Enviar (ms)</label>
+                <input id="ac-send-ms" type="number" min="300" max="15000" class="input" />
+              </div>
+            </div>
+
+            <div class="stack" style="margin-top:10px;">
+              <label class="chk">
+                <input id="ac-hard-stop" type="checkbox" />
+                <span>Parada imediata ao detectar falta de tokens / créditos esgotados</span>
+              </label>
+              <label class="chk">
+                <input id="ac-antithrottle" type="checkbox" />
+                <span>Motor Background Anti-Congelamento (mantém abas em 2º plano rodando sem travar)</span>
+              </label>
+              <label class="chk">
+                <input id="ac-autosave" type="checkbox" />
+                <span>Auto-Save contínuo de snapshots de conversa a cada turno</span>
+              </label>
+              <label class="chk">
+                <input id="ac-hide-autoprompts" type="checkbox" checked />
+                <span>🙈 Ocultar prompts automáticos e do sistema no chat ao vivo (ver apenas respostas dos Agents e suas mensagens)</span>
+              </label>
+            </div>
+
+            <div class="item-box" style="margin-top:14px;border-color:rgba(244,63,94,0.45);background:rgba(244,63,94,0.08);">
+              <div class="item-top" style="margin-bottom:6px;">
+                <strong style="color:#fda4af;">🚫 Modo Recusa de Modelos Thinking (Padrão)</strong>
+              </div>
+              <div class="stack">
+                <label class="chk">
+                  <input id="ac-refuse-thinking" type="checkbox" checked />
+                  <span>Parar e recusar modelos que mostrem <code>&gt; Thinking...</code>, <code>🧠 Thinking...</code> ou <code>Thought for X seconds</code></span>
+                </label>
+                <label class="chk">
+                  <input id="ac-refuse-reroll" type="checkbox" checked />
+                  <span>Sortear novo chat <code>https://arena.ai/agent</code> automaticamente até achar modelo sem Thinking (e só então adicionar ao Time)</span>
+                </label>
+                <div class="row" style="align-items:center;">
+                  <label class="lbl" style="margin:0;flex:1;">Máximo de Re-Sorteios Seguidos por Vaga</label>
+                  <input id="ac-refuse-max" type="number" min="1" max="40" value="15" class="input" style="width:95px;" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Alertas de Parada por Falta de Tokens</h2>
+            <div class="stack">
+              <label class="chk"><input id="ac-notif" type="checkbox" /> <span>Notificação Nativa Desktop no sistema</span></label>
+              <label class="chk"><input id="ac-sound" type="checkbox" /> <span>Alerta Sonoro ao esgotar tokens</span></label>
+              <label class="chk"><input id="ac-blink" type="checkbox" /> <span>Piscar título da aba ("⚠️ [SEM TOKENS]")</span></label>
+              <label class="chk"><input id="ac-badge" type="checkbox" /> <span>Mostrar contador/alerta no ícone da extensão</span></label>
+            </div>
+
+            <label class="lbl" style="margin-top:10px;">Webhook Opcional (Discord / Slack / JSON)</label>
+            <div class="row">
+              <input id="ac-webhook" class="input" placeholder="https://discord.com/api/webhooks/..." />
+              <button id="ac-test-webhook" class="btn">Testar</button>
+            </div>
+
+            <label class="lbl" style="margin-top:10px;">Frases de Detecção de Limite de Tokens (1 por linha)</label>
+            <textarea id="ac-limit-patterns" class="textarea" rows="5"></textarea>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Regras Condicionais Inteligentes (Analisa a Última Resposta do Agent)</h2>
+            <button id="ac-add-rule" class="btn">+ Nova Regra</button>
+          </div>
+          <div id="ac-rules-list" class="stack"></div>
+        </div>
+      </section>
+
+      <!-- 4. PROMPTS & MACROS -->
+      <section id="sec-prompts" class="section">
+        <div class="sec-header">
+          <div>
+            <h1>Produtividade — Prompts, Comandos "/" & Macros Agent</h1>
+            <p class="muted">Templates dinâmicos com {{variáveis}}, menu rápido "/" no chat e sequências de workflow.</p>
+          </div>
+          <div class="row">
+            <button id="pr-export-json" class="btn">⬇ Exportar Biblioteca</button>
+            <label class="btn" style="cursor:pointer;">
+              ⬆ Importar JSON
+              <input id="pr-import-file" type="file" accept=".json" style="display:none;" />
+            </label>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h2>Novo / Editar Template de Prompt</h2>
+            <input type="hidden" id="pm-edit-id" />
+            <div class="row">
+              <div style="flex:2;">
+                <label class="lbl">Título</label>
+                <input id="pm-title" class="input" placeholder="Ex: Criar API Completa" />
+              </div>
+              <div style="flex:1;">
+                <label class="lbl">Comando "/"</label>
+                <input id="pm-slash" class="input" placeholder="/api" />
+              </div>
+              <div style="flex:1;">
+                <label class="lbl">Categoria</label>
+                <input id="pm-cat" class="input" value="Agent Mode" />
+              </div>
+            </div>
+            <label class="lbl" style="margin-top:8px;">Conteúdo (use {{nome_da_variavel}} para variáveis preenchíveis)</label>
+            <textarea id="pm-content" class="textarea" rows="4" placeholder="Construa {{sistema}} usando {{tecnologia}}..."></textarea>
+            <div class="row" style="margin-top:8px;">
+              <button id="pm-save" class="btn btn-primary">Salvar Template</button>
+              <button id="pm-clear" class="btn">Limpar</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Nova Macro de Workflow Multi-Etapas</h2>
+            <label class="lbl">Nome da Macro</label>
+            <input id="mc-new-name" class="input" placeholder="Ex: Pipeline SaaS Completo" />
+            <label class="lbl" style="margin-top:6px;">Descrição Curta</label>
+            <input id="mc-new-desc" class="input" placeholder="Executa 4 fases em sequência e depois entra em loop" />
+            <label class="lbl" style="margin-top:6px;">Etapas da Fila (1 prompt por linha)</label>
+            <textarea id="mc-new-steps" class="textarea" rows="4" placeholder="Etapa 1: Estruture o banco e modelos...&#10;Etapa 2: Construa as rotas e telas...&#10;Etapa 3: Rode testes e corrija erros..."></textarea>
+            <button id="mc-save-macro" class="btn btn-primary" style="margin-top:8px;">Salvar Macro</button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h2>Templates Cadastrados</h2>
+            <div id="pm-list" class="stack"></div>
+          </div>
+          <div class="card">
+            <h2>Macros de Workflow Agent</h2>
+            <div id="mc-macros-list" class="stack"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. HISTORY, FOLDERS & EXPORT -->
+      <section id="sec-history" class="section">
+        <div class="sec-header">
+          <div>
+            <h1>Organização, Histórico Avançado & Exportação</h1>
+            <p class="muted">Pastas, etiquetas, snapshots automáticos de Agents e exportação em Markdown, PDF/HTML e JSON.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <input id="hs-search" class="input" style="flex:2;" placeholder="Busca Global: pesquise qualquer palavra, código ou título em todos os chats salvos..." />
+            <select id="hs-folder-filter" class="select" style="flex:1;">
+              <option value="">Todas as Pastas</option>
+            </select>
+            <input id="hs-new-folder" class="input" style="width:180px;" placeholder="Nova pasta..." />
+            <button id="hs-add-folder" class="btn">+ Pasta</button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h2>Conversas & Snapshots Salvos (<span id="hs-count">0</span>)</h2>
+            <div id="hs-list" class="stack" style="max-height:520px;overflow-y:auto;"></div>
+          </div>
+          <div class="card">
+            <h2>Visualizador & Exportação</h2>
+            <div id="hs-viewer" class="stack">
+              <div class="muted">Selecione uma conversa ao lado para ler o conteúdo, organizar em pastas ou exportar em Markdown, PDF/HTML ou JSON.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. ANALYTICS & BATTLE MODE -->
+      <section id="sec-analytics" class="section">
+        <div class="sec-header">
+          <div>
+            <h1>Estatísticas de Execução do Agent Mode & Placar Battle</h1>
+            <p class="muted">Métricas detalhadas de loops automáticos, lotes paralelos, consumo estimado e votos no Battle Mode.</p>
+          </div>
+          <button id="an-reset" class="btn">Zerar Estatísticas</button>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-val emerald" id="an-loops">0</span>
+            <span class="kpi-lbl">Loops Automáticos Executados</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val" id="an-batches">0</span>
+            <span class="kpi-lbl">Lotes Multi-Agent Disparados</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val" id="an-spawned">0</span>
+            <span class="kpi-lbl">Abas Agent Criadas</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val danger" id="an-stops">0</span>
+            <span class="kpi-lbl">Paradas por Limite de Tokens</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val danger" id="an-thinking-refused">0</span>
+            <span class="kpi-lbl">Modelos Thinking Recusados</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val" id="an-tokens">0</span>
+            <span class="kpi-lbl">Tokens de Prompts Estimados</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val" id="an-runtime">0m</span>
+            <span class="kpi-lbl">Tempo de Autopilot Ativo</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val emerald" id="an-collab-rooms">0</span>
+            <span class="kpi-lbl">Salas TempChat Criadas</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val" id="an-collab-msgs">0</span>
+            <span class="kpi-lbl">Msgs Colaborativas Trocadas</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val emerald" id="an-gh-commits">0</span>
+            <span class="kpi-lbl">Commits GitHub Enviados</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val" id="an-gh-prs">0</span>
+            <span class="kpi-lbl">Pull Requests Criados</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-val" id="an-temp-files">0</span>
+            <span class="kpi-lbl">Arquivos Temp Compartilhados</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h2>Registro de Execução das Sessões Agent</h2>
+            <div id="an-session-logs" class="stack" style="max-height:420px;overflow-y:auto;"></div>
+          </div>
+
+          <div class="card">
+            <h2>Placar Pessoal Battle Mode & Notas de Modelos</h2>
+            <div class="row" style="margin-bottom:8px;">
+              <input id="an-model-name" class="input" placeholder="Nome do modelo (ex: claude-opus, gpt-5, gemini)..." />
+              <input id="an-model-note" class="input" placeholder="Sua avaliação / nota..." />
+              <button id="an-save-note" class="btn">Salvar Nota</button>
+            </div>
+            <div id="an-battle-summary" class="stack" style="max-height:360px;overflow-y:auto;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. VISUAL & BACKUP -->
+      <section id="sec-visual" class="section">
+        <div class="sec-header">
+          <div>
+            <h1>Customização Visual (UI/UX) & Backup Completo</h1>
+            <p class="muted">Presets de temas com 1 clique, Modo Zen, largura ajustável e backup geral dos seus dados.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Coleção de Presets de Temas (Ativação em 1 Clique)</h2>
+          <div id="vis-presets-grid" class="themes-grid"></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h2>Ajustes de Interface & Layout no Arena.ai</h2>
+            <div class="stack">
+              <label class="chk"><input id="vs-zen" type="checkbox" /> <span>Modo Zen / Foco (ocultar barra lateral do Arena)</span></label>
+              <label class="chk"><input id="vs-toolbar" type="checkbox" /> <span>Mostrar Barra Rápida acima do campo de prompt</span></label>
+              <label class="chk"><input id="vs-fab" type="checkbox" /> <span>Mostrar Botão Flutuante (Arena Ultra) no canto inferior</span></label>
+              <label class="chk"><input id="vs-slash" type="checkbox" /> <span>Ativar menu automático ao digitar "/" no chat</span></label>
+            </div>
+
+            <div class="row" style="margin-top:12px;">
+              <div style="flex:1;">
+                <label class="lbl">Largura do Chat (0 = padrão, 70-100% = Widescreen)</label>
+                <input id="vs-width" type="number" min="0" max="100" class="input" />
+              </div>
+              <div style="flex:1;">
+                <label class="lbl">Tamanho da Fonte px (0 = padrão, 13-20)</label>
+                <input id="vs-fontsize" type="number" min="0" max="22" class="input" />
+              </div>
+            </div>
+
+            <label class="lbl" style="margin-top:8px;">Família Tipográfica</label>
+            <select id="vs-fontfamily" class="select">
+              <option value="native">Nativa Oficial do Arena.ai</option>
+              <option value="inter">Inter Clean Sans</option>
+              <option value="jetbrains">JetBrains Mono (Estilo Dev)</option>
+              <option value="serif">Editorial Serif</option>
+            </select>
+
+            <button id="vs-save-layout" class="btn btn-primary" style="margin-top:12px;">Aplicar Layout em Todas as Abas</button>
+          </div>
+
+          <div class="card">
+            <h2>Backup &amp; Restauração Completa (Sem Credenciais — SEC-03)</h2>
+            <p class="muted">Exporte todas as suas configurações, biblioteca de prompts, macros, histórico salvo e estatísticas em um único arquivo JSON local (tokens e webhooks são omitidos automaticamente por segurança).</p>
+            <div class="row" style="margin-top:12px;flex-wrap:wrap;gap:8px;">
+              <button id="bk-export-all" class="btn btn-primary">⬇ Baixar Backup Completo (.json)</button>
+              <label class="btn" style="cursor:pointer;">
+                ⬆ Restaurar Backup (.json)
+                <input id="bk-import-all" type="file" accept=".json" style="display:none;" />
+              </label>
+              <button id="bk-export-diag" class="btn">🩺 Exportar Diagnóstico Sanitizado</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. v4.0 SCHEDULER, CODEBASE MEMORY, PLUGINS & SECURITY AUDIT HUB -->
+      <section id="sec-v4hub" class="section">
+        <div class="sec-header">
+          <div>
+            <h1>⚡ Automação Avançada, Memória de Código &amp; Auditoria (v4.0)</h1>
+            <p class="muted">Agendador Cron via <code>chrome.alarms</code>, Briefing persistente por repositório, Plugins CSP-safe e Log de Auditoria de 30 dias sem segredos.</p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h2>⏰ Agendador de Tarefas Recorrentes (Cron / Intervalo — PROD-03)</h2>
+            <div class="row" style="margin-top:8px;">
+              <input id="sched-name" class="input" placeholder="Nome (ex: Revisão Diária de Issues)" style="flex:1.2;" />
+              <input id="sched-cron" class="input" placeholder="Cron 5 campos (ex: 0 9 * * *)" value="0 9 * * *" style="flex:1;" />
+            </div>
+            <textarea id="sched-prompt" class="textarea" style="margin-top:8px;min-height:70px;" placeholder="Prompt autônomo a ser disparado automaticamente no horário agendado..."></textarea>
+            <div class="row" style="margin-top:8px;justify-content:space-between;">
+              <label class="chk"><input id="sched-collab" type="checkbox" checked /> <span>Lançar em Sala Colaborativa TempChat (3 Agents)</span></label>
+              <button id="sched-add-btn" class="btn btn-primary">➕ Criar Agendamento</button>
+            </div>
+            <div id="sched-list" class="stack" style="margin-top:12px;"></div>
+          </div>
+
+          <div class="card">
+            <h2>🧠 Memória Persistente &amp; Briefing por Repositório (PROD-04)</h2>
+            <input id="mem-repo-slug" class="input" placeholder="owner/repo (ex: nadabgfccvd/My-Path)" />
+            <textarea id="mem-arch" class="textarea" style="margin-top:8px;min-height:68px;" placeholder="Resumo de arquitetura injetado automaticamente nos Agents deste repo..."></textarea>
+            <input id="mem-conv" class="input" style="margin-top:8px;" placeholder="Convenções / Regras (ex: Zero dependências externas, PT-BR, testes node --test)" />
+            <div class="row" style="margin-top:8px;gap:8px;">
+              <button id="mem-load-btn" class="btn">📥 Carregar Memória</button>
+              <button id="mem-save-btn" class="btn btn-primary">💾 Salvar Briefing do Repo</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:16px;">
+          <div class="card">
+            <div class="card-head">
+              <h2>🔌 Plugins &amp; Hooks Declarativos CSP-Safe (PROD-08)</h2>
+            </div>
+            <div id="v4-plugins-list" class="stack"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>🛡️ Log de Auditoria de API &amp; Segurança (30 Dias — SEC-05)</h2>
+              <button id="v4-refresh-audit-btn" class="btn btn-sm">🔄 Atualizar</button>
+            </div>
+            <div id="v4-audit-list" class="stack" style="max-height:280px;overflow-y:auto;"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="dash-toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="../shared/i18n.js"></script>
+  <script src="../shared/cred-broker.js"></script>
+  <script src="../shared/diff-engine.js"></script>
+  <script src="../shared/arena-adapter.js"></script>
+  <script src="../shared/scheduler.js"></script>
+  <script src="../shared/plugin-runtime.js"></script>
+  <script src="../shared/defaults.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="../shared/integrations.js"></script>
+  <script src="../shared/agent-kit.js"></script>
+  <script src="../shared/harness-engine.js"></script>
+  <script src="../shared/collab-engine.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

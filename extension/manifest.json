@@ -1,0 +1,141 @@
+{
+  "manifest_version": 3,
+  "name": "Arena Ultra — Autopilot, Multi-Agent, Cofre Zero-Token & TempChat para Arena.ai",
+  "short_name": "Arena Ultra",
+  "version": "4.5.0",
+  "minimum_chrome_version": "116",
+  "description": "Orquestração Multi-Agent v4.5 com Agent Kit dedicado, harness por modo, Cofre Zero-Token, isolamento de salas, chat, timer real e PARAR TUDO.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Arena Ultra v4.5 — Mission Control & Agent Kit",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "dashboard/dashboard.html",
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "tabs",
+    "tabGroups",
+    "alarms",
+    "notifications",
+    "scripting",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "*://arena.ai/*",
+    "*://*.arena.ai/*",
+    "*://lmarena.ai/*",
+    "*://*.lmarena.ai/*",
+    "https://api.github.com/*",
+    "https://github.com/*",
+    "https://codeload.github.com/*",
+    "https://*.githubusercontent.com/*",
+    "https://filebin.net/*",
+    "https://*.filebin.net/*",
+    "https://storage.filebin.net/*"
+  ],
+  "optional_host_permissions": [
+    "https://tempchat.online/*",
+    "https://*.tempchat.online/*",
+    "https://litterbox.catbox.moe/*",
+    "https://litter.catbox.moe/*",
+    "https://uguu.se/*",
+    "https://*.uguu.se/*",
+    "https://x0.at/*",
+    "https://discord.com/api/webhooks/*",
+    "https://discordapp.com/api/webhooks/*",
+    "https://api.telegram.org/*",
+    "https://hooks.slack.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://arena.ai https://*.arena.ai https://lmarena.ai https://*.lmarena.ai https://api.github.com https://github.com https://codeload.github.com https://*.githubusercontent.com https://filebin.net https://*.filebin.net https://storage.filebin.net https://litterbox.catbox.moe https://litter.catbox.moe https://uguu.se https://*.uguu.se https://x0.at https://discord.com https://discordapp.com https://api.telegram.org https://hooks.slack.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://arena.ai/*",
+        "*://*.arena.ai/*",
+        "*://lmarena.ai/*",
+        "*://*.lmarena.ai/*"
+      ],
+      "exclude_matches": [
+        "*://help.arena.ai/*",
+        "*://arena.ai/blog/*"
+      ],
+      "js": [
+        "content/page-bridge.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://arena.ai/*",
+        "*://*.arena.ai/*",
+        "*://lmarena.ai/*",
+        "*://*.lmarena.ai/*"
+      ],
+      "exclude_matches": [
+        "*://help.arena.ai/*",
+        "*://arena.ai/blog/*"
+      ],
+      "js": [
+        "shared/i18n.js",
+        "shared/cred-broker.js",
+        "shared/diff-engine.js",
+        "shared/arena-adapter.js",
+        "shared/scheduler.js",
+        "shared/plugin-runtime.js",
+        "shared/defaults.js",
+        "shared/storage.js",
+        "shared/integrations.js",
+        "shared/agent-kit.js",
+        "shared/harness-engine.js",
+        "shared/collab-engine.js",
+        "content/themes.js",
+        "content/content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://tempchat.online/*",
+        "https://*.tempchat.online/*"
+      ],
+      "js": [
+        "shared/cred-broker.js",
+        "content/tempchat-bridge.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content/page-bridge.js",
+        "icons/*"
+      ],
+      "matches": [
+        "*://arena.ai/*",
+        "*://*.arena.ai/*",
+        "*://lmarena.ai/*",
+        "*://*.lmarena.ai/*"
+      ],
+      "use_dynamic_url": true
+    }
+  ]
+}

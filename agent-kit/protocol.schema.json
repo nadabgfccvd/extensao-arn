@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Arena Ultra Agent Session protocol 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "roomId", "agentIndex"],
+  "properties": {
+    "protocol": {"const": 1},
+    "roomId": {"type": "string", "pattern": "^[a-zA-Z0-9_-]{1,64}$"},
+    "agentIndex": {"type": "integer", "minimum": 1, "maximum": 60},
+    "epoch": {"type": "integer", "minimum": 1, "maximum": 1000000000},
+    "agentName": {"type": "string", "maxLength": 160},
+    "roleTitle": {"type": "string", "maxLength": 160},
+    "filebinId": {"type": "string", "pattern": "^(|[a-zA-Z0-9_-]{1,100})$"},
+    "roomHmacKey": {"type": "string", "pattern": "^(|[a-fA-F0-9]{64})$"},
+    "minTimestampMs": {"type": "integer", "minimum": 0},
+    "timerMinutes": {"type": "integer", "minimum": 0, "maximum": 480},
+    "profile": {"enum": ["fixed", "queue", "conditional", "hybrid", "specialists", "parallel_leader", "debate_consensus"]},
+    "projectPath": {"type": "string", "description": "Must resolve under the agent home, not equal to home; checked by runtime."},
+    "harnessEnabled": {"type": "boolean"},
+    "allowUploads": {"type": "boolean"},
+    "github": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "repo": {"type": "string", "pattern": "^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$"},
+        "baseBranch": {"type": "string"},
+        "branch": {"type": "string"},
+        "cap": {"type": "string", "maxLength": 300},
+        "accessLevel": {"enum": ["push_and_pr", "push_branch", "read_only", "revoked"]}
+      }
+    }
+  },
+  "$comment": "Schema documents the contract. The standard-library runtime validator is authoritative, also checking signed transport, PAT rejection and project boundaries. Base64 is not encryption."
+}

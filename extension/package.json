@@ -1,0 +1,14 @@
+{
+  "name": "arena-ultra-extension",
+  "version": "4.5.0",
+  "description": "Arena Ultra v4.5.0 — Unified Team Collaboration, Anti-Pollution Barrier-Sync & Zero-Token Git Vault for Arena.ai (Manifest V3, Zero-Build)",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "verify": "node scripts/verify-extension.js",
+    "test": "node --test tests/*.test.js",
+    "ci": "node scripts/verify-extension.js && node --test tests/*.test.js"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "fixture": "5 agents, specialists, synthetic room/key/cap, same objective and GitHub",
+  "nativeCharacters": 53133,
+  "kitCharacters": 2245,
+  "reductionPercent": 95.77,
+  "metric": "JavaScript string length; not model tokens or quality benchmark"
+}

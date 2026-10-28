@@ -1,0 +1,10 @@
+node_modules/
+__pycache__/
+*.pyc
+au_state/
+au_agent/
+agent-session.json
+*.env
+.env*
+*.key
+*.pem
